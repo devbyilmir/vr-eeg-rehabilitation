@@ -3,6 +3,21 @@ using UnityEngine;
 
 public class RehabArmController : MonoBehaviour
 {
+    public event System.Action<string, int, int, string> OnFeedbackChanged;
+
+    public int Repetitions => repetitions;
+    public int GoalRepetitions => goalRepetitions;
+    public bool IsCompleted => completed;
+
+    private void NotifyFeedback(string command, string status)
+    {
+        OnFeedbackChanged?.Invoke(
+            command,
+            repetitions,
+            goalRepetitions,
+            status
+        );
+    }
     [Header("Right Arm")]
     public Transform arm;
     public Transform hand;
@@ -85,6 +100,7 @@ public class RehabArmController : MonoBehaviour
         SetColor(leftMaterial, waitingColor);
 
         Debug.Log("Тренажёр готов. Ожидание команды ЭЭГ.");
+        NotifyFeedback("", "ready");
     }
 
     void Update()
@@ -160,6 +176,7 @@ public class RehabArmController : MonoBehaviour
             );
 
             SetColor(activeMaterial, missColor);
+            NotifyFeedback(activeCommand, "miss");
             activeCommand = "";
             return;
         }
@@ -168,6 +185,8 @@ public class RehabArmController : MonoBehaviour
         targetReached = false;
 
         SetColor(activeMaterial, movingColor);
+
+        NotifyFeedback(activeCommand, "moving");
 
         Debug.Log(
             $"Команда {activeCommand}. Угол: {targetAngle:F1}°"
@@ -244,6 +263,7 @@ public class RehabArmController : MonoBehaviour
             repetitions++;
 
             SetColor(activeMaterial, successColor);
+            NotifyFeedback(activeCommand, "success");
 
             Debug.Log(
                 $"Касание {activeCommand} подтверждено: " +
@@ -253,6 +273,7 @@ public class RehabArmController : MonoBehaviour
         else
         {
             SetColor(activeMaterial, missColor);
+            NotifyFeedback(activeCommand, "miss");
 
             Debug.Log(
                 $"Промах {activeCommand}. Расстояние: " +
@@ -293,6 +314,11 @@ public class RehabArmController : MonoBehaviour
         {
             completed = true;
             Debug.Log("Упражнение завершено!");
+            NotifyFeedback(activeCommand, "completed");
+        }
+        else
+        {
+            NotifyFeedback("", "ready");
         }
 
         activeCommand = "";
@@ -325,6 +351,8 @@ public class RehabArmController : MonoBehaviour
 
         SetColor(rightMaterial, waitingColor);
         SetColor(leftMaterial, waitingColor);
+
+        NotifyFeedback("", "ready");
 
         Debug.Log("Упражнение сброшено.");
     }
